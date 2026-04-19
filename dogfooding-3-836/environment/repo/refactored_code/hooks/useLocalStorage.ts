@@ -1,35 +1,66 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
-export function useLocalStorage<T>(
-  key: string,
-  initialValue: T,
-  maxItems?: number
-) {
-  const [storedValue, setStoredValue] = useState<T>(() => {
+interface UseLocalStorageOptions<T> {
+  key: string
+  initialValue: T
+  maxLength?: number
+}
+
+interface UseLocalStorageReturn<T> {
+  value: T
+  setValue: (value: T | ((prev: T) => T)) => void
+  remove: () => void
+  loading: boolean
+}
+
+export function useLocalStorage<T>({
+  key,
+  initialValue,
+  maxLength,
+}: UseLocalStorageOptions<T>): UseLocalStorageReturn<T> {
+  const [value, setValueState] = useState<T>(initialValue)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
     try {
-      const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setValueState(parsed)
+      }
     } catch {
-      return initialValue
+      console.error(`Failed to load ${key} from localStorage`)
+    } finally {
+      setLoading(false)
     }
-  })
+  }, [key])
 
-  const setValue = useCallback((value: T | ((prev: T) => T)) => {
-    try {
-      const valueToStore = value instanceof Function
-        ? value(storedValue)
-        : value
+  const setValue = useCallback(
+    (newValue: T | ((prev: T) => T)) => {
+      setValueState((prev) => {
+        const resolvedValue = newValue instanceof Function ? newValue(prev) : newValue
+        let finalValue = resolvedValue
 
-      const finalValue = maxItems && Array.isArray(valueToStore)
-        ? valueToStore.slice(0, maxItems)
-        : valueToStore
+        if (Array.isArray(finalValue) && maxLength !== undefined) {
+          finalValue = finalValue.slice(0, maxLength) as T
+        }
 
-      setStoredValue(finalValue)
-      window.localStorage.setItem(key, JSON.stringify(finalValue))
-    } catch (error) {
-      console.error('Error saving to localStorage:', error)
-    }
-  }, [key, storedValue, maxItems])
+        try {
+          localStorage.setItem(key, JSON.stringify(finalValue))
+        } catch (err) {
+          console.error(`Failed to save ${key} to localStorage:`, err)
+        }
 
-  return [storedValue, setValue] as const
+        return finalValue
+      })
+    },
+    [key, maxLength]
+  )
+
+  const remove = useCallback(() => {
+    setValueState(initialValue)
+    localStorage.removeItem(key)
+  }, [key, initialValue])
+
+  return { value, setValue, remove, loading }
 }

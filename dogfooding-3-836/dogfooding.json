@@ -1,0 +1,24 @@
+{
+  "project_id": "dogfooding-3-836",
+  "project_name": "代码理解与分析 - Web 前端项目",
+  "created_at": "2026-04-19T17:03:00+08:00",
+  "task_type": "L1-UND",
+  "l2_domain": "L2-02",
+  "l3_tech_stack": "React 18 + TypeScript + Vite",
+  "status": "in_progress",
+
+  "task": {
+    "type": "code_understanding_analysis",
+    "description": "对给定的 React Web 前端项目进行代码理解与分析",
+    "target_code": "environment/repo/",
+    "dimensions": [
+      "comprehension",
+      "bug_detection",
+      "complexity",
+      "refactoring",
+      "security",
+      "execution_trace",
+      "architecture_review"
+    ]
+  }
+}
